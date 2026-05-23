@@ -366,6 +366,9 @@ function startToolDrag(event, container, dataName, storageKey) {
     storageKey,
     startX: event.clientX,
     startY: event.clientY,
+    offsetX: 0,
+    offsetY: 0,
+    placeholder: null,
     moved: false
   };
 }
@@ -381,17 +384,76 @@ function moveToolDrag(event) {
   }
 
   event.preventDefault();
-  toolDrag.moved = true;
-  toolDrag.item.classList.add("dragging");
+  if (!toolDrag.moved) {
+    activateToolDrag(event);
+  }
 
-  const nextItem = getToolItems(toolDrag.container)
-    .filter((item) => item !== toolDrag.item)
+  moveDraggedTool(event);
+  const nextItem = getSortableDropItems(toolDrag.container)
     .find((item) => {
       const rect = item.getBoundingClientRect();
       return event.clientY < rect.top + rect.height / 2;
     });
 
-  toolDrag.container.insertBefore(toolDrag.item, nextItem || null);
+  if (nextItem !== toolDrag.placeholder && nextItem !== toolDrag.placeholder?.nextElementSibling) {
+    animateToolListChange(toolDrag.container, () => {
+      toolDrag.container.insertBefore(toolDrag.placeholder, nextItem || null);
+    });
+  }
+}
+
+function activateToolDrag(event) {
+  const rect = toolDrag.item.getBoundingClientRect();
+  const placeholder = document.createElement("div");
+  placeholder.className = "tool-drop-placeholder";
+  placeholder.style.height = `${rect.height}px`;
+  toolDrag.placeholder = placeholder;
+  toolDrag.offsetX = event.clientX - rect.left;
+  toolDrag.offsetY = event.clientY - rect.top;
+  toolDrag.moved = true;
+
+  toolDrag.container.insertBefore(placeholder, toolDrag.item);
+  document.body.append(toolDrag.item);
+  Object.assign(toolDrag.item.style, {
+    position: "fixed",
+    left: `${rect.left}px`,
+    top: `${rect.top}px`,
+    width: `${rect.width}px`
+  });
+  toolDrag.item.classList.add("dragging");
+}
+
+function moveDraggedTool(event) {
+  toolDrag.item.style.left = `${event.clientX - toolDrag.offsetX}px`;
+  toolDrag.item.style.top = `${event.clientY - toolDrag.offsetY}px`;
+}
+
+function getSortableDropItems(container) {
+  return [...container.children].filter((item) => item.classList.contains("tool-list-item"));
+}
+
+function animateToolListChange(container, change) {
+  const before = new Map([...container.children].map((item) => [item, item.getBoundingClientRect()]));
+  change();
+  for (const item of container.children) {
+    const oldRect = before.get(item);
+    if (!oldRect) {
+      continue;
+    }
+
+    const newRect = item.getBoundingClientRect();
+    const deltaY = oldRect.top - newRect.top;
+    if (deltaY === 0) {
+      continue;
+    }
+
+    item.style.transition = "none";
+    item.style.transform = `translateY(${deltaY}px)`;
+    requestAnimationFrame(() => {
+      item.style.transition = "transform 160ms ease";
+      item.style.transform = "";
+    });
+  }
 }
 
 function finishToolDrag() {
@@ -400,13 +462,15 @@ function finishToolDrag() {
   }
 
   const finishedDrag = toolDrag;
-  finishedDrag.item.classList.remove("dragging");
+  resetDraggedTool(finishedDrag);
   if (finishedDrag.moved) {
+    finishedDrag.container.insertBefore(finishedDrag.item, finishedDrag.placeholder);
+    finishedDrag.placeholder.remove();
     persistToolOrder(finishedDrag.container, finishedDrag.dataName, finishedDrag.storageKey);
     suppressToolClick = true;
     setTimeout(() => {
       suppressToolClick = false;
-    }, 0);
+    }, 160);
   }
   toolDrag = null;
 }
@@ -416,8 +480,17 @@ function cancelToolDrag() {
     return;
   }
 
-  toolDrag.item.classList.remove("dragging");
+  resetDraggedTool(toolDrag);
+  if (toolDrag.placeholder) {
+    toolDrag.container.insertBefore(toolDrag.item, toolDrag.placeholder);
+    toolDrag.placeholder.remove();
+  }
   toolDrag = null;
+}
+
+function resetDraggedTool(drag) {
+  drag.item.classList.remove("dragging");
+  drag.item.removeAttribute("style");
 }
 
 document.addEventListener("pointermove", moveToolDrag);
