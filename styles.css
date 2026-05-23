@@ -86,6 +86,30 @@ input {
   gap: 8px;
 }
 
+.tool-list-item {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.tool-list-item.dragging {
+  cursor: grabbing;
+  pointer-events: none;
+  transform: scale(1.02);
+  box-shadow: 0 12px 30px rgba(36, 37, 31, 0.14);
+  z-index: 20;
+}
+
+.tool-list-item:active {
+  cursor: grabbing;
+}
+
+.tool-drop-placeholder {
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  background: rgba(47, 111, 95, 0.08);
+}
+
 .tool-button {
   display: grid;
   grid-template-columns: 34px 1fr;
