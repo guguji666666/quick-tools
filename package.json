@@ -1,0 +1,10 @@
+{
+  "name": "quick-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "test": "node tests/yaml-diff-core.test.mjs"
+  }
+}
