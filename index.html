@@ -19,20 +19,24 @@
         </div>
 
         <nav class="tool-nav">
-          <button class="tool-button active" type="button" data-tool="yaml-diff" aria-current="page">
-            <span class="tool-icon" aria-hidden="true">{ }</span>
-            <span>
-              <strong>YAML Diff</strong>
-              <small data-i18n="semanticDiff">语义比对</small>
-            </span>
-          </button>
-          <button class="tool-button" type="button" data-tool="it-tools">
-            <span class="tool-icon" aria-hidden="true">IT</span>
-            <span>
-              <strong>IT Tools</strong>
-              <small data-i18n="embeddedToolbox">内嵌工具集</small>
-            </span>
-          </button>
+          <div class="tool-list-item">
+            <button class="tool-button active" type="button" data-tool="yaml-diff" aria-current="page">
+              <span class="tool-icon" aria-hidden="true">{ }</span>
+              <span>
+                <strong>YAML Diff</strong>
+                <small data-i18n="semanticDiff">语义比对</small>
+              </span>
+            </button>
+          </div>
+          <div class="tool-list-item">
+            <button class="tool-button" type="button" data-tool="it-tools">
+              <span class="tool-icon" aria-hidden="true">IT</span>
+              <span>
+                <strong>IT Tools</strong>
+                <small data-i18n="embeddedToolbox">内嵌工具集</small>
+              </span>
+            </button>
+          </div>
         </nav>
       </aside>
 
@@ -118,34 +122,48 @@
 
           <section class="it-workbench">
             <nav class="it-tool-list" aria-label="内嵌工具列表" data-i18n-aria-label="embeddedToolList">
-              <button class="it-tool-button active" type="button" data-it-tool="json" aria-current="page">
-                <strong>JSON</strong>
-                <span data-i18n="jsonToolMeta">格式化 / 压缩</span>
-              </button>
-              <button class="it-tool-button" type="button" data-it-tool="base64">
-                <strong>Base64</strong>
-                <span data-i18n="base64ToolMeta">编码 / 解码</span>
-              </button>
-              <button class="it-tool-button" type="button" data-it-tool="url">
-                <strong>URL</strong>
-                <span data-i18n="urlToolMeta">编码 / 解码</span>
-              </button>
-              <button class="it-tool-button" type="button" data-it-tool="sha256">
-                <strong>SHA-256</strong>
-                <span data-i18n="shaToolMeta">生成摘要</span>
-              </button>
-              <button class="it-tool-button" type="button" data-it-tool="uuid">
-                <strong>UUID</strong>
-                <span data-i18n="uuidToolMeta">生成 UUID</span>
-              </button>
-              <button class="it-tool-button" type="button" data-it-tool="timestamp">
-                <strong>Timestamp</strong>
-                <span data-i18n="timestampToolMeta">时间戳转换</span>
-              </button>
-              <button class="it-tool-button" type="button" data-it-tool="text-case">
-                <strong>Text Case</strong>
-                <span data-i18n="textCaseToolMeta">大小写转换</span>
-              </button>
+              <div class="tool-list-item">
+                <button class="it-tool-button active" type="button" data-it-tool="json" aria-current="page">
+                  <strong>JSON</strong>
+                  <span data-i18n="jsonToolMeta">格式化 / 压缩</span>
+                </button>
+              </div>
+              <div class="tool-list-item">
+                <button class="it-tool-button" type="button" data-it-tool="base64">
+                  <strong>Base64</strong>
+                  <span data-i18n="base64ToolMeta">编码 / 解码</span>
+                </button>
+              </div>
+              <div class="tool-list-item">
+                <button class="it-tool-button" type="button" data-it-tool="url">
+                  <strong>URL</strong>
+                  <span data-i18n="urlToolMeta">编码 / 解码</span>
+                </button>
+              </div>
+              <div class="tool-list-item">
+                <button class="it-tool-button" type="button" data-it-tool="sha256">
+                  <strong>SHA-256</strong>
+                  <span data-i18n="shaToolMeta">生成摘要</span>
+                </button>
+              </div>
+              <div class="tool-list-item">
+                <button class="it-tool-button" type="button" data-it-tool="uuid">
+                  <strong>UUID</strong>
+                  <span data-i18n="uuidToolMeta">生成 UUID</span>
+                </button>
+              </div>
+              <div class="tool-list-item">
+                <button class="it-tool-button" type="button" data-it-tool="timestamp">
+                  <strong>Timestamp</strong>
+                  <span data-i18n="timestampToolMeta">时间戳转换</span>
+                </button>
+              </div>
+              <div class="tool-list-item">
+                <button class="it-tool-button" type="button" data-it-tool="text-case">
+                  <strong>Text Case</strong>
+                  <span data-i18n="textCaseToolMeta">大小写转换</span>
+                </button>
+              </div>
             </nav>
 
             <div class="it-tool-stage">

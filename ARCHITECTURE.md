@@ -4,7 +4,7 @@
 
 - `index.html`：页面结构，包含左侧工具列表、YAML Diff 工作区和 IT Tools 内嵌工具工作台。
 - `styles.css`：全局样式和响应式布局。
-- `src/app.js`：页面交互、工具切换、语言切换、YAML Diff 多会话状态、关闭撤销、Worker 调用、左右对照结果渲染、IT Tools 内嵌转换工具逻辑。
+- `src/app.js`：页面交互、工具切换、工具排序、语言切换、YAML Diff 多会话状态、关闭撤销、Worker 调用、左右对照结果渲染、IT Tools 内嵌转换工具逻辑。
 - `src/yaml-diff-worker.js`：加载 YAML 解析器，在后台线程解析并比对。
 - `src/yaml-diff-core.js`：纯数据比对逻辑，供 Worker 和测试共用。
 - `server.mjs`：本地静态文件服务器。
@@ -12,7 +12,7 @@
 
 ## 模块调用关系
 
-`index.html` 加载 `src/app.js`。用户点击左侧工具时，`src/app.js` 切换对应面板。用户点击 YAML 比对后，`src/app.js` 从当前会话取出两份文本，发送给 `src/yaml-diff-worker.js`。Worker 使用 `js-yaml` 解析，再调用 `src/yaml-diff-core.js` 生成差异列表，最后把结果发回对应会话渲染。用户使用 IT Tools 时，转换逻辑直接在主页面执行，不访问后端。
+`index.html` 加载 `src/app.js`。用户点击左侧工具时，`src/app.js` 切换对应面板。用户拖动工具卡片时，`src/app.js` 调整工具节点顺序，并把工具 id 顺序保存到浏览器本地状态。用户点击 YAML 比对后，`src/app.js` 从当前会话取出两份文本，发送给 `src/yaml-diff-worker.js`。Worker 使用 `js-yaml` 解析，再调用 `src/yaml-diff-core.js` 生成差异列表，最后把结果发回对应会话渲染。用户使用 IT Tools 时，转换逻辑直接在主页面执行，不访问后端。
 
 ## 关键设计决定
 
@@ -22,6 +22,7 @@
 - YAML Diff 会话保存在浏览器内存中。原因是当前目标是快速临时比对，不把用户粘贴的配置写入本地存储更稳妥。
 - 最近一次关闭的会话也只保存在内存中。原因是撤销要快，但不应该把用户粘贴的 YAML 持久保存。
 - 中英文文案集中放在前端字典中。原因是当前只有一个静态页面，用字典比引入 i18n 框架更简单。
+- 工具排序只持久化工具 id。原因是用户要保留入口顺序，但不能保存 YAML 或转换工具输入内容。
 - 不引入打包器。原因是当前目标是 GitHub Pages，小工具启动越直接越好。
 - IT Tools 不整包引入。原因是整包引入会增加项目复杂度，并带来 GPLv3 改造发布约束；本站按需实现常用小工具。
 - 时间戳转换只使用毫秒。原因是自动猜秒或毫秒会造成不确定结果。

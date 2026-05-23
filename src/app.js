@@ -16,10 +16,12 @@ const duration = document.querySelector("#duration");
 const sessionTabs = document.querySelector("#sessionTabs");
 const newSessionButton = document.querySelector("#newSessionButton");
 const languageButtons = document.querySelectorAll("[data-language]");
+const toolNav = document.querySelector(".tool-nav");
 const toolButtons = document.querySelectorAll("[data-tool]");
 const toolPanels = document.querySelectorAll("[data-tool-panel]");
 const toolTitle = document.querySelector("#tool-title");
 const toolEyebrow = document.querySelector("#toolEyebrow");
+const itToolList = document.querySelector(".it-tool-list");
 const itToolButtons = document.querySelectorAll("[data-it-tool]");
 const itToolType = document.querySelector("#itToolType");
 const itToolTitle = document.querySelector("#itToolTitle");
@@ -241,7 +243,11 @@ let activeItTool = "json";
 let syncingDiffScroll = false;
 let lastClosedSession = null;
 let currentLanguage = detectLanguage();
+let toolDrag = null;
+let suppressToolClick = false;
 const sessions = [];
+const toolOrderStorageKey = "quick-tools-tool-order";
+const itToolOrderStorageKey = "quick-tools-it-tool-order";
 
 const itToolState = {
   json: { mode: "format", input: "", output: "" },
@@ -262,6 +268,8 @@ itToolButtons.forEach((button) => {
 languageButtons.forEach((button) => {
   button.addEventListener("click", () => setLanguage(button.dataset.language));
 });
+setupSortableToolList(toolNav, "tool", toolOrderStorageKey);
+setupSortableToolList(itToolList, "itTool", itToolOrderStorageKey);
 newSessionButton.addEventListener("click", createSession);
 compareButton.addEventListener("click", compare);
 editButton.addEventListener("click", editActiveSession);
@@ -279,12 +287,152 @@ sortKeys.addEventListener("change", () => saveActiveInput(true));
 leftDiffPane.addEventListener("scroll", () => syncDiffScroll(leftDiffPane, rightDiffPane));
 rightDiffPane.addEventListener("scroll", () => syncDiffScroll(rightDiffPane, leftDiffPane));
 
+applyStoredOrder(toolNav, "tool", toolOrderStorageKey);
+applyStoredOrder(itToolList, "itTool", itToolOrderStorageKey);
 applyLanguage();
 createSession();
 syncItTool();
 
 if (window.location.protocol === "file:") {
   showMessage(t("fileOpenNotice"));
+}
+
+function applyStoredOrder(container, dataName, storageKey) {
+  const savedOrder = localStorage.getItem(storageKey);
+  if (!savedOrder) {
+    return;
+  }
+
+  const order = JSON.parse(savedOrder);
+  if (!Array.isArray(order)) {
+    throw new Error(`Invalid stored order: ${storageKey}`);
+  }
+
+  const items = getToolItems(container);
+  const itemsByValue = new Map(items.map((item) => [getToolItemValue(item, dataName), item]));
+  const seen = new Set();
+  if (order.length !== itemsByValue.size) {
+    throw new Error(`Stored order length mismatch: ${storageKey}`);
+  }
+
+  for (const value of order) {
+    if (seen.has(value) || !itemsByValue.has(value)) {
+      throw new Error(`Stored order item mismatch: ${storageKey}`);
+    }
+    seen.add(value);
+    container.append(itemsByValue.get(value));
+  }
+}
+
+function persistToolOrder(container, dataName, storageKey) {
+  const order = getToolItems(container).map((item) => getToolItemValue(item, dataName));
+  localStorage.setItem(storageKey, JSON.stringify(order));
+}
+
+function setupSortableToolList(container, dataName, storageKey) {
+  container.addEventListener("pointerdown", (event) => {
+    startToolDrag(event, container, dataName, storageKey);
+  });
+
+  container.addEventListener("mousedown", (event) => {
+    startToolDrag(event, container, dataName, storageKey);
+  });
+
+  container.addEventListener("click", (event) => {
+    if (!suppressToolClick) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressToolClick = false;
+  }, true);
+}
+
+function startToolDrag(event, container, dataName, storageKey) {
+  if (event.button !== 0 || toolDrag) {
+    return;
+  }
+
+  const item = event.target.closest(".tool-list-item");
+  if (!item || !container.contains(item)) {
+    return;
+  }
+
+  toolDrag = {
+    item,
+    container,
+    dataName,
+    storageKey,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false
+  };
+}
+
+function moveToolDrag(event) {
+  if (!toolDrag) {
+    return;
+  }
+
+  const distance = Math.hypot(event.clientX - toolDrag.startX, event.clientY - toolDrag.startY);
+  if (distance < 4) {
+    return;
+  }
+
+  event.preventDefault();
+  toolDrag.moved = true;
+  toolDrag.item.classList.add("dragging");
+
+  const nextItem = getToolItems(toolDrag.container)
+    .filter((item) => item !== toolDrag.item)
+    .find((item) => {
+      const rect = item.getBoundingClientRect();
+      return event.clientY < rect.top + rect.height / 2;
+    });
+
+  toolDrag.container.insertBefore(toolDrag.item, nextItem || null);
+}
+
+function finishToolDrag() {
+  if (!toolDrag) {
+    return;
+  }
+
+  const finishedDrag = toolDrag;
+  finishedDrag.item.classList.remove("dragging");
+  if (finishedDrag.moved) {
+    persistToolOrder(finishedDrag.container, finishedDrag.dataName, finishedDrag.storageKey);
+    suppressToolClick = true;
+    setTimeout(() => {
+      suppressToolClick = false;
+    }, 0);
+  }
+  toolDrag = null;
+}
+
+function cancelToolDrag() {
+  if (!toolDrag) {
+    return;
+  }
+
+  toolDrag.item.classList.remove("dragging");
+  toolDrag = null;
+}
+
+document.addEventListener("pointermove", moveToolDrag);
+document.addEventListener("mousemove", moveToolDrag);
+document.addEventListener("pointerup", finishToolDrag);
+document.addEventListener("mouseup", finishToolDrag);
+document.addEventListener("pointercancel", cancelToolDrag);
+
+function getToolItems(container) {
+  return [...container.querySelectorAll(":scope > .tool-list-item")];
+}
+
+function getToolItemValue(item, dataName) {
+  const selector = dataName === "tool" ? "[data-tool]" : "[data-it-tool]";
+  return item.querySelector(selector).dataset[dataName];
 }
 
 function detectLanguage() {
